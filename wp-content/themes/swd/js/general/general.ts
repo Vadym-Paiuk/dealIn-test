@@ -199,9 +199,25 @@ function downloadModal(): void {
 			}
 
 			// make the download form wrapper visible
+			const downloadFormSent = getCookie('downloadFormSent');
 			const downloadFormWrapper: HTMLElement | null = document.querySelector<HTMLElement>('.download-form-wrapper.popup');
-			if (downloadFormWrapper) {
+			if (downloadFormWrapper && downloadFormSent != 'true') {
 				downloadFormWrapper.classList.add('open');
+			}else{
+				// get the download link from the hidden input field
+				if (form) {
+					const downloadLinkInput: HTMLInputElement | null = form.querySelector('input[name="downloadLink"]');
+					if (downloadLinkInput) {
+						const downloadLink: string = downloadLinkInput.value;
+						if (downloadLink) {
+							// create an anchor element to trigger the file download
+							const anchorElement: HTMLAnchorElement = document.createElement('a');
+							anchorElement.href = downloadLink;
+							anchorElement.download = '';
+							anchorElement.click();
+						}
+					}
+				}
 			}
 		});
 	});
@@ -227,6 +243,8 @@ function downloadModal(): void {
 		// add submit event listener to the download form
 		downloadForm.addEventListener('wpcf7mailsent', (e: Event) => {
 			e.preventDefault();
+
+			setCookie('downloadFormSent', 'true', 30);
 			// get the download link from the hidden input field
 			const downloadLinkInput: HTMLInputElement | null = downloadForm.querySelector('input[name="downloadLink"]');
 			if (downloadLinkInput) {
@@ -242,6 +260,28 @@ function downloadModal(): void {
 		});
 	}
 }
+
+function setCookie(name: string, value: string, days: number) {
+	const date = new Date();
+	date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+	const expires = "expires=" + date.toUTCString();
+	document.cookie = name + "=" + value + "; " + expires + "; path=/";
+}
+
+function getCookie(name: string): string | null {
+	const cookieName = name + "=";
+	const decodedCookie = decodeURIComponent(document.cookie);
+	const cookieArray = decodedCookie.split(';');
+
+	for (let i = 0; i < cookieArray.length; i++) {
+		let cookie = cookieArray[i].trim();
+		if (cookie.indexOf(cookieName) === 0) {
+			return cookie.substring(cookieName.length, cookie.length);
+		}
+	}
+	return null; // Return null if the cookie with the specified name is not found
+}
+
 
 domReady((): void => {
 	// add padding-top like header height
